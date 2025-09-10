@@ -1,7 +1,11 @@
 import { useState } from 'react';
 import { MAX_CHAR_COUNT } from '../lib/constants';
 
-export default function FeedbackForm() {
+type FeedbackFormProps = {
+  onAddToList: (text: string) => void;
+};
+
+export default function FeedbackForm({ onAddToList }: FeedbackFormProps) {
   const [text, setText] = useState('');
 
   const charCount = MAX_CHAR_COUNT - text.length;
@@ -15,12 +19,18 @@ export default function FeedbackForm() {
     setText(newText);
   };
 
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    onAddToList(text);
+    setText('');
+  };
+
   // the placeholder blabla text is a css trick to make the label text show
   // before the user writes anything, if its ommited the label will not be visible
   // and the form is a controlled component, meaning the value of the textarea is
   // controlled by React state
   return (
-    <form className="form">
+    <form onSubmit={handleSubmit} className="form">
       <textarea
         onChange={handleChange}
         value={text}
