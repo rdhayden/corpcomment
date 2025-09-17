@@ -1,6 +1,6 @@
-import Footer from './Footer';
-import Container from './Container';
-import HashtagList from './HashtagList';
+import Footer from './layout/Footer';
+import Container from './layout/Container';
+import HashtagList from './hashtags/HashtagList';
 import { useEffect, useState } from 'react';
 import { TFeedbackItem } from '../lib/types';
 
@@ -8,9 +8,27 @@ function App() {
   const [feedbackItems, setFeedbackItems] = useState<TFeedbackItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [selectedCompany, setSelectedCompany] = useState('');
 
-  const handleAddToList = (text: string) => {
-    const companyName = text
+  const filteredFeedbackItems = selectedCompany
+    ? feedbackItems.filter(
+        (feedbackItem) =>
+          feedbackItem.company.toLowerCase() === selectedCompany.toLowerCase()
+      )
+    : feedbackItems;
+
+  const handleSelectCompany = (company: string) => {
+    setSelectedCompany(company);
+  };
+
+  const companyList = feedbackItems
+    .map((item) => item.company)
+    .filter(
+      (companyName, index, array) => array.indexOf(companyName) === index
+    );
+
+  const handleAddToList = async (text: string) => {
+    const company = text
       .split(' ')
       .find((word: string) => word.includes('#'))!
       .substring(1);
@@ -18,13 +36,25 @@ function App() {
     const newItem: TFeedbackItem = {
       id: new Date().getTime(),
       upvoteCount: 0,
-      badgeLetter: companyName.substring(0, 1).toUpperCase(),
-      companyName: companyName,
+      badgeLetter: company.substring(0, 1).toUpperCase(),
+      company: company,
       text: text,
       daysAgo: 0,
     };
 
     setFeedbackItems([...feedbackItems, newItem]);
+
+    await fetch(
+      'https://bytegrad.com/course-assets/projects/corpcomment/api/feedbacks',
+      {
+        method: 'POST',
+        body: JSON.stringify(newItem),
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+      }
+    );
   };
 
   useEffect(
@@ -76,12 +106,15 @@ function App() {
     <div className="app">
       <Footer />
       <Container
-        feedbackItems={feedbackItems}
+        feedbackItems={filteredFeedbackItems}
         isLoading={isLoading}
         errorMessage={errorMessage}
         handleAddToList={handleAddToList}
       />
-      <HashtagList />
+      <HashtagList
+        companyList={companyList}
+        handleSelectCompany={handleSelectCompany}
+      />
     </div>
   );
 }
